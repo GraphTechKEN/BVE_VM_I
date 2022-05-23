@@ -1,7 +1,8 @@
 #include <Adafruit_MCP4725.h>
 #include <EEPROM.h>
 #include <Wire.h>
-
+//更新履歴
+//V5.1 電流計モードを絶対値表示に対応させた
 //↓デバッグのコメント(//)を解除するとシリアルモニタでデバッグできます
 //#define DEBUG
 
@@ -375,8 +376,8 @@ void loop() {
       //回生モード
       i = strbve.indexOf("CURR_KAISEI:");
       if (i > 0) {
-        int on = strbve.indexOf("ON");
-        int off = strbve.indexOf("OFF");
+        int8_t on = strbve.indexOf("ON");
+        int8_t off = strbve.indexOf("OFF");
         if ( on < 0 && off < 0 ) {
           Serial.println("SET NG");
         } else {
@@ -409,7 +410,7 @@ void loop() {
         }
       }
 
-            //最高速度設定
+      //最高速度設定
       i = strbve.indexOf("CURR_LIMIT:");
       if (i > 0) {
         uint16_t num = strbve.substring(i + 10, i + 13).toInt();
@@ -480,7 +481,11 @@ void loop() {
       int v = 1500 - (int)(bve_current * 0.5);
       dac2.setVoltage(map(v, 0 , curr_limit , 0, 4095), false);
     } else {
-      dac2.setVoltage(map(bve_current, 0 , curr_limit , 0, 4095), false);
+      int current = abs(bve_current);
+      if(current > curr_limit){
+        current = curr_limit;
+      }
+      dac2.setVoltage(map(current, 0 , curr_limit , 0, 4095), false);
     }
 
     //戸閉灯指示
